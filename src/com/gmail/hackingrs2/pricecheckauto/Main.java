@@ -21,6 +21,8 @@ import com.gmail.hackingrs2.pricecheck.Database;
 public class Main {
 
 	/** Variables */
+	private static boolean loggedIn = false;
+
 	private static Timer timer;
 	private static boolean running = false;
 
@@ -62,14 +64,13 @@ public class Main {
 		database = new Database();
 		database.init();
 
-		System.out.println("Please wait while the client is logging in...");
+		// System.out.println("Please wait while the client is logging in...");
 
 		/** Log in to the website. */
-		try {
-			login();
-		} catch (FailingHttpStatusCodeException | IOException e) {
-			e.printStackTrace();
-		}
+		/*
+		 * try { login(); } catch (FailingHttpStatusCodeException | IOException
+		 * e) { e.printStackTrace(); }
+		 */
 
 		/** Init Timer. */
 		timer = new Timer();
@@ -91,9 +92,13 @@ public class Main {
 
 				if (command.equalsIgnoreCase("start")) {
 					if (!running) {
-						/** Start the repeating task that reads the website. */
-						timer.scheduleAtFixedRate(new Listen(), 0, 1000);
-						System.out.println("Task started.");
+						if (!loggedIn) {
+							/** Start the repeating task that reads the website. */
+							timer.scheduleAtFixedRate(new Listen(), 0, 1000);
+							System.out.println("Task started.");
+						} else {
+							System.err.println("You must first log in to do this! Type --login <name> <password>");
+						}
 					} else {
 						System.err.println("Task is already running!");
 					}
@@ -105,6 +110,19 @@ public class Main {
 						System.out.println("Task stopped.");
 					} else {
 						System.err.println("Task is not running!");
+					}
+
+				} else if (command.startsWith("login")) {
+					if (args2.length == 3) {
+						String username = args2[1];
+						String password = args2[2];
+
+						try {
+							System.out.println("Logging in...");
+							login(username, password);
+						} catch (FailingHttpStatusCodeException | IOException e) {
+							e.printStackTrace();
+						}
 					}
 
 				} else if (command.startsWith("post")) {
@@ -140,7 +158,7 @@ public class Main {
 	}
 
 	/** Log in to the website. */
-	private static void login() throws FailingHttpStatusCodeException, IOException {
+	private static void login(String username, String password) throws FailingHttpStatusCodeException, IOException {
 		/** Connect to the website. */
 		final HtmlPage page1 = webClient.getPage("https://network.ultimatescape2.com/");
 
@@ -155,12 +173,12 @@ public class Main {
 		final HtmlPasswordInput textField1 = form.getInputByName("password");
 
 		/** Set the field values. */
-		textField.setValueAttribute("example"); // username
-		textField1.setValueAttribute("qwerty"); // password
+		textField.setValueAttribute(username); // username
+		textField1.setValueAttribute(password); // password
 
 		/** Click the button and get the opened page. */
 		HtmlPage page2 = button.click();
-		
+
 		/** Close the window. */
 		webClient.closeAllWindows();
 
@@ -175,10 +193,10 @@ public class Main {
 	public static String latestMessage() throws FailingHttpStatusCodeException, IOException {
 		/** Connect to the website using our session id. */
 		final HtmlPage page = webClient.getPage("https://network.ultimatescape2.com/cpsess" + sessionId + "/chat-full");
-		
+
 		/** Get the source code of the page. */
 		String data = page.asText();
-		
+
 		/** Close the window. */
 		webClient.closeAllWindows();
 
@@ -198,13 +216,13 @@ public class Main {
 	public static void post(String message) throws IOException {
 		/** Connect to the website using our session id. */
 		final HtmlPage page = webClient.getPage("https://network.ultimatescape2.com/cpsess" + sessionId + "/chat-full");
-		
+
 		/** Get the input form. */
 		final HtmlForm form = page.getForms().get(0);
-		
+
 		/** The send button. */
 		final HtmlSubmitInput button = form.getInputByValue("Send");
-		
+
 		/** The message field. */
 		final HtmlTextInput textField = form.getInputByName("message");
 
@@ -213,7 +231,7 @@ public class Main {
 
 		/** Click the button. */
 		button.click();
-		
+
 		/** Close the window. */
 		webClient.closeAllWindows();
 	}
