@@ -276,6 +276,11 @@ public class Client {
 	}
 
 	private void logout() {
+		if(running) {
+			send("Please stop the task first.", false, true);
+			return;
+		}
+		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
