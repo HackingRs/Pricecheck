@@ -50,10 +50,16 @@ public class Client {
 	private Style normal;
 
 	private JTextField textField;
+
 	private JMenuBar menuBar;
+
 	private JMenu file;
 	private JMenuItem logout;
 	private JMenuItem exit;
+
+	private JMenu task;
+	private JMenuItem start;
+	private JMenuItem stop;
 
 	private Timer timer;
 	private boolean running = false;
@@ -76,7 +82,7 @@ public class Client {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e1) {
-			e1.printStackTrace();
+			sendError(e1);
 		}
 
 		frame = new JFrame();
@@ -116,6 +122,38 @@ public class Client {
 		});
 
 		file.add(exit);
+
+		task = new JMenu("Task");
+		menuBar.add(task);
+
+		start = new JMenuItem("Start");
+		start.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!running) {
+					timer.scheduleAtFixedRate(new Listen(), 0, 1000);
+					running = true;
+					send("Task started.", false, false);
+				} else {
+					send("Task is already running!", false, true);
+				}
+			}
+		});
+
+		task.add(start);
+
+		stop = new JMenuItem("Stop");
+		stop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (running) {
+					timer.cancel();
+					send("Task stopped.", false, false);
+				} else {
+					send("Task is not running!", false, true);
+				}
+			}
+		});
+
+		task.add(stop);
 
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
@@ -158,58 +196,19 @@ public class Client {
 		btnSend.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (textField.getText().startsWith("--")) {
-					processInput(textField.getText());
-					return;
-				}
-
-				send(textField.getText(), false);
+				send(textField.getText(), true, false);
+				textField.setText(null);
 			}
 		});
 
 		textField.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					if (textField.getText().startsWith("--")) {
-						processInput(textField.getText());
-						return;
-					}
-
-					send(textField.getText(), false);
+					send(textField.getText(), true, false);
+					textField.setText(null);
 				}
 			}
 		});
-	}
-
-	private void processInput(String next) {
-		String[] commandLine = next.split("--");
-		String command = commandLine[1];
-		String[] args2 = command.split(" ");
-
-		if (command.equalsIgnoreCase("start")) {
-			if (!running) {
-				timer.scheduleAtFixedRate(new Listen(), 0, 1000);
-				running = true;
-				send("Task started.", false);
-			} else {
-				send("Task is already running!", true);
-			}
-
-		} else if (command.equalsIgnoreCase("end")) {
-			if (running) {
-				timer.cancel();
-				send("Task stopped.", false);
-			} else {
-				send("Task is not running!", true);
-			}
-
-		} else if (command.equalsIgnoreCase("exit")) {
-			if (running) {
-				timer.cancel();
-			}
-
-			System.exit(0);
-		}
 	}
 
 	public Set<String> latestMessage() throws FailingHttpStatusCodeException, IOException {
@@ -243,18 +242,25 @@ public class Client {
 		webClient.closeAllWindows();
 	}
 
-	public void send(String message, boolean error) {
+	public void send(String message, boolean chat, boolean error) {
 		try {
 			doc.insertString(doc.getLength(), message + "\n", error ? this.error : normal);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
 
-		try {
-			post(message);
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (chat) {
+			try {
+				post(message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+	}
+
+	public void sendError(Exception ex) {
+		send("A fatal error occured.", false, true);
+		send(ex.getMessage(), false, true);
 	}
 
 	private void logout() {
@@ -264,7 +270,7 @@ public class Client {
 					Login frame = new Login();
 					frame.setVisible(true);
 				} catch (Exception e) {
-					e.printStackTrace();
+					sendError(e);
 				}
 			}
 		});
