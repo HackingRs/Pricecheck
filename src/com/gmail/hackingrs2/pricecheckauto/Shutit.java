@@ -22,7 +22,6 @@ public class Shutit {
 		call();
 	}
 
-	/** Disable HTMLUnit parser spam. */
 	private void call() {
 		webClient.setIncorrectnessListener(new IncorrectnessListener() {
 
