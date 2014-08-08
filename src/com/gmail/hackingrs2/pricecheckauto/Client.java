@@ -245,15 +245,7 @@ public class Client {
 		webClient.closeAllWindows();
 	}
 
-	public void send(String message, boolean chat, boolean error) {
-		if(message.startsWith("--")) {
-			if(message.split("--")[1].equalsIgnoreCase("error")) {
-				sendError(new Exception());
-			}
-			
-			return;
-		}
-		
+	public void send(String message, boolean chat, boolean error) {	
 		try {
 			doc.insertString(doc.getLength(), message + "\n", error ? this.error : this.normal);
 		} catch (BadLocationException e) {
@@ -274,12 +266,12 @@ public class Client {
 		PrintWriter pw = new PrintWriter(sw);
 		ex.printStackTrace(pw);
 
-		send("A fatal error occured.", false, true);
+		send("A fatal error has occured.\n", false, true);
 		
-		send("ERROR", false, true);
-		send(sw.toString() + "\n", false, true);
+		send("----- ERROR -----", false, true);
+		send(sw.toString(), false, true);
 		
-		send("LINE", false, true);
+		send("----- LINE -----", false, true);
 		send(ErrorParser.findResponsible(sw.toString()), false, true);
 	}
 
