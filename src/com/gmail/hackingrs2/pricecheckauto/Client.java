@@ -8,6 +8,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
@@ -172,6 +174,7 @@ public class Client {
 
 		JScrollPane scrollPane = new JScrollPane(history);
 		scrollPane.setBounds(history.getBounds());
+		scrollPane.setAutoscrolls(true);
 		panel_1.add(scrollPane);
 
 		doc = history.getStyledDocument();
@@ -179,7 +182,7 @@ public class Client {
 		StyleConstants.setForeground(error, Color.red);
 
 		normal = history.addStyle("normal", null);
-		StyleConstants.setForeground(error, Color.black);
+		StyleConstants.setForeground(normal, Color.black);
 
 		textField = new JTextField();
 		textField.setBounds(10, 237, 483, 20);
@@ -243,8 +246,16 @@ public class Client {
 	}
 
 	public void send(String message, boolean chat, boolean error) {
+		if(message.startsWith("--")) {
+			if(message.split("--")[1].equalsIgnoreCase("error")) {
+				sendError(new Exception());
+			}
+			
+			return;
+		}
+		
 		try {
-			doc.insertString(doc.getLength(), message + "\n", error ? this.error : normal);
+			doc.insertString(doc.getLength(), message + "\n", error ? this.error : this.normal);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
@@ -259,8 +270,17 @@ public class Client {
 	}
 
 	public void sendError(Exception ex) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		ex.printStackTrace(pw);
+
 		send("A fatal error occured.", false, true);
-		send(ex.getMessage(), false, true);
+		
+		send("ERROR", false, true);
+		send(sw.toString() + "\n", false, true);
+		
+		send("LINE", false, true);
+		send(ErrorParser.findResponsible(sw.toString()), false, true);
 	}
 
 	private void logout() {
