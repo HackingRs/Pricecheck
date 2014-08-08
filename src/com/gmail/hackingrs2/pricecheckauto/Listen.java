@@ -16,7 +16,7 @@ public class Listen extends TimerTask {
 		try {
 			messages = Client.getClient().latestMessage();
 		} catch (FailingHttpStatusCodeException | IOException e) {
-			e.printStackTrace();
+			Client.getClient().sendError(e);
 		}
 
 		for (String message : messages) {
@@ -27,7 +27,7 @@ public class Listen extends TimerTask {
 	}
 
 	private void parseAndAnswer(String message) {
-		Client.getClient().send(message, false);
+		Client.getClient().send(message, false, false);
 
 		if (Client.latestAnswered.size() >= 10) {
 			Client.latestAnswered.clear();
@@ -39,16 +39,16 @@ public class Listen extends TimerTask {
 		String s = c[2].trim();
 		String ss = "";
 
-		if (s.startsWith("pc")) {
+		if (s.startsWith("pc on")) {
+			ss = "pc on";
+		} else if (s.startsWith("pc")) {
 			ss = "pc";
+		} else if (s.startsWith("price check on")) {
+			ss = "price check on";
 		} else if (s.startsWith("pricecheck")) {
 			ss = "pricecheck";
 		} else if (s.startsWith("price check")) {
 			ss = "price check";
-		} else if (s.startsWith("pc on")) {
-			ss = "pc on";
-		} else if (s.startsWith("price check on")) {
-			ss = "price check on";
 		} else if (s.startsWith("how much is")) {
 			ss = "how much is";
 		} else {
@@ -68,11 +68,9 @@ public class Listen extends TimerTask {
 
 		if (!itemName.isEmpty()) {
 			System.out.println(Login.getDatabase().find(itemName).replaceAll("\\[", "").replaceAll("\\]", ""));
-			/*try {
-				Client.getClient().post(Login.getDatabase().find(itemName).replaceAll("\\[", "").replaceAll("\\]", ""));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}*/
+			/*
+			 * try { Client.getClient().post(Login.getDatabase().find(itemName).replaceAll("\\[", "").replaceAll("\\]", "")); } catch (IOException e) { e.printStackTrace(); }
+			 */
 		}
 	}
 }
